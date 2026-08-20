@@ -5,11 +5,12 @@ from eduai.services.progress_service import ProgressService
 from eduai.database.connection import SessionLocal
 from eduai.database.models import Quiz, QuizResult, Question
 
-class QuizView(ft.UserControl):
+class QuizView(ft.Container):
     def __init__(self, user, page: ft.Page):
         super().__init__()
         self.user = user
         self.page = page
+        self.expand = True
         
         # State variables
         self.quiz_questions = []
@@ -29,6 +30,7 @@ class QuizView(ft.UserControl):
         self.main_container = ft.Container(content=self.generator_panel, expand=True)
 
         self.init_generator()
+        self.content = self.main_container
 
     def init_generator(self):
         self.subject_dropdown = ft.Dropdown(
@@ -336,6 +338,3 @@ class QuizView(ft.UserControl):
         self.page.snack_bar = ft.SnackBar(ft.Text(message))
         self.page.snack_bar.open = True
         self.page.update()
-
-    def build(self):
-        return self.main_container

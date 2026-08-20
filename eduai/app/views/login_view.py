@@ -2,7 +2,7 @@ import flet as ft
 from eduai.services.auth_service import AuthService
 from eduai.database.models import UserRole
 
-class LoginView(ft.UserControl):
+class LoginView(ft.Container):
     def __init__(self, page: ft.Page, on_login_success):
         super().__init__()
         self.page = page
@@ -91,9 +91,11 @@ class LoginView(ft.UserControl):
         )
 
         self.views_container = ft.Container(expand=True)
+        
+        # Build views layout directly
+        self.setup_login_layout()
 
-    def build(self):
-        # Set default login view content directly (no update call on unmounted control)
+    def setup_login_layout(self):
         self.views_container.content = ft.Column(
             [
                 self.login_user,
@@ -116,7 +118,7 @@ class LoginView(ft.UserControl):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER
         )
         
-        return ft.Container(
+        self.content = ft.Container(
             content=ft.Column(
                 [
                     ft.Container(

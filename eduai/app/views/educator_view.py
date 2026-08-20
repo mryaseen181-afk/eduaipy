@@ -2,11 +2,12 @@ import flet as ft
 from eduai.database.connection import SessionLocal
 from eduai.database.models import Course, Chapter, Topic, User, UserRole, Quiz, Question, QuestionType
 
-class EducatorView(ft.UserControl):
+class EducatorView(ft.Container):
     def __init__(self, user, page: ft.Page):
         super().__init__()
         self.user = user
         self.page = page
+        self.expand = True
         
         # UI dropdown options fields
         self.c_title = ft.TextField(label="Course Title", placeholder="e.g. Thermodynamics, Linear Algebra")
@@ -59,6 +60,7 @@ class EducatorView(ft.UserControl):
         )
 
         self.refresh_selectors()
+        self.content = self.build_layout()
 
     def refresh_selectors(self):
         db = SessionLocal()
@@ -236,7 +238,7 @@ class EducatorView(ft.UserControl):
         self.page.snack_bar.open = True
         self.page.update()
 
-    def build(self):
+    def build_layout(self):
         self.load_student_data()
         
         # Tabs for management

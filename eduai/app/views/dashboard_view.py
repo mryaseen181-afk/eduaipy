@@ -3,12 +3,13 @@ from eduai.services.progress_service import ProgressService
 from eduai.database.connection import SessionLocal
 from eduai.database.models import User, Notification, UserAchievement
 
-class DashboardView(ft.UserControl):
+class DashboardView(ft.Container):
     def __init__(self, user, page: ft.Page, app_router):
         super().__init__()
         self.user = user
         self.page = page
         self.app_router = app_router
+        self.expand = True
         
         # UI controls references
         self.welcome_txt = ft.Text(size=20, weight=ft.FontWeight.BOLD, color=ft.colors.INDIGO_400)
@@ -24,6 +25,7 @@ class DashboardView(ft.UserControl):
         self.chart_container = ft.Column(spacing=15)
 
         self.refresh_data()
+        self.content = self.build_layout()
 
     def refresh_data(self):
         # Refresh session user details from database
@@ -180,7 +182,7 @@ class DashboardView(ft.UserControl):
                 )
             )
 
-    def build(self):
+    def build_layout(self):
         # Master scroll column
         return ft.Column(
             [

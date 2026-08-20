@@ -1,12 +1,13 @@
 import flet as ft
 from eduai.services.ai_service import AIService
 
-class AITutorView(ft.UserControl):
+class AITutorView(ft.Container):
     def __init__(self, user, page: ft.Page):
         super().__init__()
         self.user = user
         self.page = page
         self.chat_history = []
+        self.expand = True
         
         # UI controls references
         self.chat_column = ft.Column(scroll=ft.ScrollMode.ADAPTIVE, expand=True)
@@ -24,6 +25,7 @@ class AITutorView(ft.UserControl):
         self.teach_display = ft.Column(scroll=ft.ScrollMode.ADAPTIVE, expand=True)
         
         self.init_chat()
+        self.content = self.build_layout()
 
     def init_chat(self):
         self.chat_column.controls.append(
@@ -169,7 +171,7 @@ class AITutorView(ft.UserControl):
         self.page.snack_bar.open = True
         self.page.update()
 
-    def build(self):
+    def build_layout(self):
         # Splitter row
         return ft.Row(
             [

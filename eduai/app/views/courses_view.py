@@ -4,12 +4,13 @@ from eduai.services.progress_service import ProgressService
 from eduai.database.connection import SessionLocal
 from eduai.database.models import Course, Chapter, Topic, UserNote
 
-class CoursesView(ft.UserControl):
+class CoursesView(ft.Container):
     def __init__(self, user, page: ft.Page):
         super().__init__()
         self.user = user
         self.page = page
         self.current_topic_id = None
+        self.expand = True
         
         # Session timer fields
         self.elapsed_seconds = 0
@@ -45,6 +46,11 @@ class CoursesView(ft.UserControl):
         self.notes_editor_container = ft.Container(content=self.personal_notes, visible=False)
         
         self.load_courses()
+        self.content = self.build_layout()
+        
+        # Setup background thread timer
+        self.timer_running = True
+        self.page.run_thread(self.run_timer)
 
     def load_courses(self):
         self.tree_col.controls.clear()
@@ -257,14 +263,12 @@ class CoursesView(ft.UserControl):
         self.page.update()
 
     def download_notes(self, e):
-        # Write file download or display simple text save notice in Flet
         if not self.current_topic_id:
             return
         db = SessionLocal()
         try:
             t = db.query(Topic).filter(Topic.id == self.current_topic_id).first()
             if t:
-                # Mock file save on mobile/local downloads
                 import os
                 download_dir = os.path.expanduser("~")
                 filepath = os.path.join(download_dir, f"StudyFlow_{t.title}.txt")
@@ -279,23 +283,22 @@ class CoursesView(ft.UserControl):
         self.page.snack_bar.open = True
         self.page.update()
 
-    def did_mount(self):
-        self.timer_running = True
-        self.page.run_thread(self.run_timer)
-
-    def will_unmount(self):
-        self.timer_running = False
-        self.save_study_session()
-
     def run_timer(self):
         while self.timer_running:
             if self.session_active:
                 self.elapsed_seconds += 1
                 self.update_timer_display()
-                self.page.update()
+                try:
+                    self.page.update()
+                except Exception:
+                    break
             time.sleep(1)
 
-    def build(self):
+    def clean_up(self):
+        self.timer_running = False
+        self.save_study_session()
+
+    def build_layout(self):
         # Two-column layout (Left: Syllabus tree scroll, Right: Reader panel scroll)
         return ft.Row(
             [
