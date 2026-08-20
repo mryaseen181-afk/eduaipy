@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Educator Control Panel — StudyFlow{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+    <div class="space-y-1">
+        <h1 class="text-xl sm:text-2xl font-extrabold text-white">🎓 Educator Control Panel</h1>
+        <p class="text-sm text-slate-400">Add course outlines, upload new lesson text, add quiz questions, and monitor student registers.</p>
+    </div>
+
+    <!-- Grid Tabs -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- 1. COURSE SYLLABUS BUILDER -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm">
+            <h3 class="font-bold text-white flex items-center space-x-2">
+                <i class="fa-solid fa-folder-plus text-brand-500"></i>
+                <span>Syllabus Course Builder</span>
+            </h3>
+            
+            <form action="/educator/course" method="POST" class="space-y-3 text-xs md:text-sm">
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400 font-bold">Course Title</label>
+                    <input type="text" name="title" required placeholder="e.g. Thermodynamics, Coordinate Geometry" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400 font-bold">Target Grade</label>
+                        <select name="class_level" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500">
+                            <option value="Class 9">Class 9</option>
+                            <option value="Class 10">Class 10</option>
+                            <option value="Class 11">Class 11</option>
+                            <option value="Class 12">Class 12</option>
+                        </select>
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400 font-bold">Subject Category</label>
+                        <select name="subject" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500">
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Physics">Physics</option>
+                            <option value="Chemistry">Chemistry</option>
+                            <option value="Biology">Biology</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400 font-bold">Course Summary</label>
+                    <textarea name="description" required placeholder="Describe what students will learn..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-brand-500 h-16 resize-none"></textarea>
+                </div>
+                
+                <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg transition text-xs shadow-sm">Publish New Course</button>
+            </form>
+        </div>
+
+        <!-- 2. LESSON NOTE UPLOADER -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm">
+            <h3 class="font-bold text-white flex items-center space-x-2">
+                <i class="fa-solid fa-file-export text-brand-500"></i>
+                <span>Publish Lesson Notes</span>
+            </h3>
+            
+            <form action="/educator/lesson" method="POST" class="space-y-3 text-xs md:text-sm">
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400 font-bold">Select Target Course</label>
+                    <select name="course_id" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500">
+                        {% for c in courses %}
+                        <option value="{{ c.id }}">{{ c.title }} ({{ c.class_level }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400 font-bold">Chapter Title</label>
+                        <input type="text" name="chapter_title" required placeholder="e.g. Chapter 1: Basic Optics" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500">
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400 font-bold">Topic Name</label>
+                        <input type="text" name="topic_title" required placeholder="e.g. Refraction of Light" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500">
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400 font-bold">Study Notes Body (Markdown/HTML Allowed)</label>
+                    <textarea name="content_notes" required placeholder="Paste lesson textbook explanations here..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-brand-500 h-20 resize-none"></textarea>
+                </div>
+                
+                <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg transition text-xs shadow-sm">Publish Lesson Content</button>
+            </form>
+        </div>
+
+        <!-- 3. MANUAL QUIZ MANAGER -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm">
+            <h3 class="font-bold text-white flex items-center space-x-2">
+                <i class="fa-solid fa-list-check text-brand-500"></i>
+                <span>Add Quiz Questions</span>
+            </h3>
+            
+            <form action="/educator/question" method="POST" class="space-y-3 text-xs md:text-sm">
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400 font-bold">Target Lesson/Topic</label>
+                    <select name="topic_id" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500">
+                        {% for c in courses %}
+                            {% for chap in c.chapters %}
+                                {% for topic in chap.topics %}
+                                <option value="{{ topic.id }}">{{ topic.title }} (in {{ c.title }})</option>
+                                {% endfor %}
+                            {% endfor %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400 font-bold">Question Text Prompt</label>
+                    <input type="text" name="question_text" required placeholder="Write question details..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400 font-bold">Type</label>
+                        <select name="q_type" id="q-type-select" onchange="toggleFormFields(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500">
+                            <option value="mcq">Multiple Choice (MCQ)</option>
+                            <option value="tf">True / False</option>
+                        </select>
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400 font-bold">Correct Answer</label>
+                        <input type="text" name="correct_answer" required placeholder="Match correct option spelling..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500">
+                    </div>
+                </div>
+
+                <!-- MCQs options grid -->
+                <div id="mcq-opts-wrapper" class="grid grid-cols-2 gap-2">
+                    <input type="text" name="opt_a" placeholder="Option A" class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-slate-200">
+                    <input type="text" name="opt_b" placeholder="Option B" class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-slate-200">
+                    <input type="text" name="opt_c" placeholder="Option C" class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-slate-200">
+                    <input type="text" name="opt_d" placeholder="Option D" class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-slate-200">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400 font-bold">Answer Correction Details</label>
+                    <input type="text" name="explanation" placeholder="Explain why this option is correct..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500">
+                </div>
+                
+                <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg transition text-xs shadow-sm">Save Practice Question</button>
+            </form>
+        </div>
+
+        <!-- 4. STUDENT PROGRESS REGISTRY TABLE -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm overflow-hidden flex flex-col h-full">
+            <h3 class="font-bold text-white flex items-center space-x-2">
+                <i class="fa-solid fa-users text-brand-500"></i>
+                <span>Student Registry & Performance</span>
+            </h3>
+            
+            <div class="flex-1 overflow-x-auto">
+                <table class="w-full text-xs text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-700 text-slate-400 font-bold">
+                            <th class="py-2">ID</th>
+                            <th class="py-2">Student</th>
+                            <th class="py-2">XP Score</th>
+                            <th class="py-2">Level</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-750 text-slate-300">
+                        {% for student in students %}
+                        <tr>
+                            <td class="py-2 font-mono">{{ student.id }}</td>
+                            <td class="py-2 font-bold">{{ student.username }}</td>
+                            <td class="py-2">{{ student.xp }}</td>
+                            <td class="py-2"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">Lvl {{ student.level }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="py-4 text-center text-slate-500">No students registered.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    function toggleFormFields(val) {
+        const mcqWrapper = document.getElementById('mcq-opts-wrapper');
+        if (val === 'tf') {
+            mcqWrapper.classList.add('hidden');
+        } else {
+            mcqWrapper.classList.remove('hidden');
+        }
+    }
+</script>
+{% endblock %}

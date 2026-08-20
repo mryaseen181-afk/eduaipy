@@ -1,24 +1,18 @@
-import sys
-from PySide6.QtWidgets import QApplication, QDialog
+import uvicorn
 from eduai.database.connection import init_db
-from eduai.ui.login_dialog import LoginDialog
-from eduai.ui.main_window import MainWindow
 
 def main():
     # 1. Initialize SQLite Database schemas and seed initial data
     init_db()
     
-    # 2. Setup QApp and styles
-    app = QApplication(sys.argv)
+    # 2. Run Uvicorn server for the FastAPI mobile-responsive Web App
+    print("\n-----------------------------------------------------------")
+    print("StudyFlow EduAI server starting locally...")
+    print("To open the mobile-friendly web app:")
+    print("--> Open your browser and go to: http://127.0.0.1:8000")
+    print("-----------------------------------------------------------\n")
     
-    # 3. Spawn Login and session check Dialog
-    login = LoginDialog()
-    if login.exec() == QDialog.Accepted and login.user:
-        window = MainWindow(login.user)
-        window.show()
-        sys.exit(app.exec())
-    else:
-        sys.exit(0)
+    uvicorn.run("eduai.web.main:app", host="127.0.0.1", port=8000, reload=False)
 
 if __name__ == "__main__":
     main()

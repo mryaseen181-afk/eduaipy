@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}EduAI Chatbot — StudyFlow{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)]">
+
+    <!-- LEFT COLUMN: EduAI Chatbot -->
+    <div class="flex-1 bg-slate-800 border border-slate-700 rounded-2xl flex flex-col overflow-hidden h-full">
+        <!-- Title -->
+        <div class="p-4 border-b border-slate-700 bg-slate-850 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg bg-brand-600/20 text-brand-400 flex items-center justify-center">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <h2 class="font-bold text-white text-sm md:text-base">EduAI Chatbot Assistant</h2>
+            </div>
+            <i class="fa-solid fa-circle text-emerald-500 text-[10px] animate-pulse"></i>
+        </div>
+
+        <!-- Chat messages timeline -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 text-xs md:text-sm">
+            <!-- Greeting -->
+            <div class="flex items-start space-x-2">
+                <div class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-xs text-slate-300">AI</div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl rounded-tl-none px-3.5 py-2.5 max-w-[85%] text-slate-300">
+                    <p class="font-semibold text-slate-200">EduAI:</p>
+                    <p>Hello! I am EduAI, your personal study tutor. Ask me any question, explain concepts, generate practice questions, or solve step-by-step math problems!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Helper Actions Buttons -->
+        <div class="px-4 py-2 border-t border-slate-700 bg-slate-900 overflow-x-auto whitespace-nowrap flex space-x-2">
+            <button onclick="useHelper('Explain Simply')" class="px-3 py-1.5 rounded-lg border border-slate-750 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">Explain Simply</button>
+            <button onclick="useHelper('Give Example')" class="px-3 py-1.5 rounded-lg border border-slate-750 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">Give Example</button>
+            <button onclick="useHelper('Summarize')" class="px-3 py-1.5 rounded-lg border border-slate-750 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">Summarize</button>
+            <button onclick="useHelper('Explain Step-by-Step')" class="px-3 py-1.5 rounded-lg border border-slate-750 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">Step-by-Step</button>
+            <button onclick="useHelper('Practice Me')" class="px-3 py-1.5 rounded-lg border border-slate-750 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">Practice Me</button>
+        </div>
+
+        <!-- Chat Input field -->
+        <div class="p-3 bg-slate-850 border-t border-slate-700 flex gap-2">
+            <input type="text" id="chat-input" placeholder="Ask EduAI a question..." onkeydown="if(event.key==='Enter') sendMessage()" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs md:text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+            <button onclick="sendMessage()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs md:text-sm font-bold transition">Send</button>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Teach Me AI -->
+    <div class="flex-1 bg-slate-800 border border-slate-700 rounded-2xl flex flex-col overflow-hidden h-full">
+        <!-- Title -->
+        <div class="p-4 border-b border-slate-700 bg-slate-850">
+            <h2 class="font-bold text-white text-sm md:text-base flex items-center space-x-2">
+                <i class="fa-solid fa-graduation-cap text-emerald-500"></i>
+                <span>"Teach Me" Custom Lesson Planner</span>
+            </h2>
+            <p class="text-[10px] text-slate-400 font-semibold mt-0.5">Input any topic to generate a personalized structured mini-lesson</p>
+        </div>
+
+        <!-- Input Topic Search Row -->
+        <div class="p-3 bg-slate-900 border-b border-slate-700 flex gap-2">
+            <input type="text" id="teach-input" placeholder="Enter topic (e.g. Gravity, Pythagoras, Photosynthesis)..." onkeydown="if(event.key==='Enter') runTeachMe()" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs md:text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+            <button onclick="runTeachMe()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs md:text-sm font-bold transition">Teach Me!</button>
+        </div>
+
+        <!-- Rendered Lesson Content -->
+        <div id="teach-display" class="flex-1 overflow-y-auto p-4 md:p-6 text-slate-300 space-y-4 text-xs md:text-sm">
+            <div class="flex flex-col items-center justify-center h-full text-center space-y-2">
+                <i class="fa-solid fa-book-bookmark text-3xl text-slate-500"></i>
+                <h4 class="font-bold text-white">Enter a Topic to Start</h4>
+                <p class="text-[11px] text-slate-400 max-w-xs">Our AI will create prerequisites, simple explanations, analogies, worked examples, and common mistakes for your topic.</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const chatHistory = []; // Tracks conversational history: {speaker: 'Student'|'EduAI', message: str}
+
+    // Chatbot send message
+    async function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+        
+        input.value = '';
+        input.disabled = true;
+        
+        // Append user bubble
+        appendBubble('Student', text, true);
+        
+        // Fetch API
+        try {
+            const res = await fetch('/api/ai_chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: text,
+                    history: chatHistory.map(h => [h.speaker, h.message])
+                })
+            });
+            const data = await res.json();
+            
+            appendBubble('EduAI', data.response, false);
+            
+            chatHistory.push({speaker: 'Student', message: text});
+            chatHistory.push({speaker: 'EduAI', message: data.response});
+        } catch (e) {
+            appendBubble('EduAI', '⚠️ Could not connect to EduAI API. Verify internet connection or GEMINI_API_KEY configuration.', false);
+        } finally {
+            input.disabled = false;
+            input.focus();
+        }
+    }
+
+    // Append bubble helper
+    function appendBubble(sender, message, isUser) {
+        const container = document.getElementById('chat-messages');
+        const bubble = document.createElement('div');
+        bubble.className = "flex items-start space-x-2" + (isUser ? " flex-row-reverse space-x-reverse" : "");
+        
+        const avatar = document.createElement('div');
+        avatar.className = `w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${isUser ? 'bg-brand-600 text-white' : 'bg-slate-700 text-slate-300'}`;
+        avatar.innerText = isUser ? "ME" : "AI";
+        
+        const content = document.createElement('div');
+        content.className = `border rounded-2xl px-3.5 py-2.5 max-w-[85%] text-slate-300 ${isUser ? 'bg-brand-600/10 border-brand-500/20 rounded-tr-none' : 'bg-slate-900 border-slate-800 rounded-tl-none'}`;
+        
+        // Format simple paragraphs / bullet points
+        const textHtml = message
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+            
+        content.innerHTML = `<p class="font-bold ${isUser ? 'text-brand-400' : 'text-slate-200'}">${sender}:</p><p class="mt-1">${textHtml}</p>`;
+        
+        bubble.appendChild(avatar);
+        bubble.appendChild(content);
+        container.appendChild(bubble);
+        
+        // Auto scroll to bottom
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Floating action helper commands
+    function useHelper(command) {
+        const input = document.getElementById('chat-input');
+        const currentText = input.value.trim();
+        if (currentText) {
+            input.value = `${command} regarding: ${currentText}`;
+            sendMessage();
+        } else {
+            const topic = prompt("Which concept or topic should we analyze?");
+            if (topic && topic.trim()) {
+                input.value = `${command} regarding: ${topic.trim()}`;
+                sendMessage();
+            }
+        }
+    }
+
+    // Teach Me AI Mini-Lesson Generator
+    async function runTeachMe() {
+        const input = document.getElementById('teach-input');
+        const display = document.getElementById('teach-display');
+        const topic = input.value.trim();
+        if (!topic) return;
+        
+        input.value = '';
+        input.disabled = true;
+        display.innerHTML = '<div class="flex flex-col items-center justify-center h-full"><i class="fa-solid fa-spinner animate-spin text-2xl text-emerald-500"></i><p class="text-xs text-slate-400 mt-2">Structuring customized mini-lesson...</p></div>';
+        
+        try {
+            const res = await fetch('/api/teach_me', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic: topic })
+            });
+            const lesson = await res.json();
+            
+            let html = `
+                <div class="space-y-4">
+                    <h2 class="text-lg font-bold text-emerald-400 border-b border-slate-700 pb-2">Lesson Plan: ${topic.toUpperCase()}</h2>
+                    
+                    <div>
+                        <h4 class="text-xs font-bold text-brand-400 uppercase tracking-wide">1. What you need to know first</h4>
+                        <ul class="list-disc pl-5 text-xs text-slate-300 mt-1 space-y-1">
+            `;
+            lesson.prerequisites.forEach(p => {
+                html += `<li>${p}</li>`;
+            });
+            html += `
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-xs font-bold text-brand-400 uppercase tracking-wide">2. Simple Explanation</h4>
+                        <p class="mt-1 text-slate-300 leading-relaxed">${lesson.explanation.replace(/\n/g, '<br>')}</p>
+                    </div>
+                    
+                    <div class="bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl">
+                        <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wide">3. Real-life Analogy</h4>
+                        <p class="mt-1 text-slate-300 italic leading-relaxed">"${lesson.analogy}"</p>
+                    </div>
+                    
+                    <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
+                        <h4 class="text-xs font-bold text-brand-400 uppercase tracking-wide">4. Worked Example</h4>
+                        <pre class="mt-1.5 text-xs text-slate-200 bg-slate-950 p-2.5 rounded-lg border border-slate-850 overflow-x-auto">${lesson.worked_example}</pre>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-xs font-bold text-rose-400 uppercase tracking-wide">5. Common Pitfalls / Mistakes</h4>
+                        <ul class="list-disc pl-5 text-xs text-slate-300 mt-1 space-y-1">
+            `;
+            lesson.common_mistakes.forEach(m => {
+                html += `<li>${m}</li>`;
+            });
+            html += `
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl space-y-1">
+                        <h4 class="text-xs font-bold text-brand-400 uppercase tracking-wide">6. Summary Notes</h4>
+                        <p class="text-xs text-slate-300">${lesson.summary}</p>
+                    </div>
+                </div>
+            `;
+            display.innerHTML = html;
+        } catch (e) {
+            display.innerHTML = '<p class="text-rose-400 text-xs">⚠️ Failed to generate custom mini-lesson. Verify network configurations.</p>';
+        } finally {
+            input.disabled = false;
+        }
+    }
+</script>
+{% endblock %}

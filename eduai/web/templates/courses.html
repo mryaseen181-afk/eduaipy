@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Courses — StudyFlow{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)]">
+
+    <!-- LEFT SIDE: Collapsible Accordion Syllabus Tree -->
+    <div class="w-full lg:w-80 bg-slate-800 border border-slate-700 rounded-2xl flex flex-col overflow-hidden">
+        <div class="p-4 border-b border-slate-700 bg-slate-800 flex items-center justify-between">
+            <h2 class="font-bold text-white">Course Syllabus Navigator</h2>
+            <i class="fa-solid fa-compass text-slate-400"></i>
+        </div>
+        
+        <!-- Accordion container -->
+        <div class="flex-1 overflow-y-auto p-3 space-y-3">
+            {% for course in courses %}
+            <div class="border border-slate-750 bg-slate-900 rounded-xl overflow-hidden">
+                <!-- Course Header -->
+                <button onclick="toggleAccordion('course-{{ course.id }}')" class="w-full flex items-center justify-between px-4 py-3 bg-slate-850 hover:bg-slate-700/50 transition">
+                    <div class="text-left">
+                        <h3 class="text-sm font-bold text-slate-100 truncate">{{ course.title }}</h3>
+                        <p class="text-[10px] text-slate-400 font-semibold">{{ course.class_level }} • {{ course.subject }}</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+                </button>
+                
+                <!-- Chapters Wrapper -->
+                <div id="course-{{ course.id }}" class="hidden border-t border-slate-800 space-y-1 p-2 bg-slate-900">
+                    {% for chapter in course.chapters %}
+                    <div class="space-y-1">
+                        <div class="px-2 py-1 text-xs text-slate-400 font-bold tracking-wider flex items-center space-x-1.5">
+                            <i class="fa-solid fa-book-open text-[10px]"></i>
+                            <span>{{ chapter.title }}</span>
+                        </div>
+                        <div class="space-y-0.5 pl-3">
+                            {% for topic in chapter.topics %}
+                            <a href="/courses/topic/{{ topic.id }}" class="block px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-slate-800 text-slate-300 hover:text-white {% if current_topic and current_topic.id == topic.id %}bg-brand-600/20 text-brand-400 border border-brand-500/20{% endif %}">
+                                <i class="fa-regular fa-file-lines mr-1.5"></i>
+                                <span>{{ topic.title }}</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- RIGHT SIDE: Lesson Note Viewer -->
+    <div class="flex-1 bg-slate-800 border border-slate-700 rounded-2xl flex flex-col overflow-hidden">
+        {% if current_topic %}
+        <!-- Header -->
+        <div class="px-4 py-3 bg-slate-850 border-b border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div class="space-y-0.5">
+                <h2 class="text-base font-bold text-white">{{ current_topic.title }}</h2>
+                <p class="text-[10px] text-slate-400 font-semibold">Chapter: {{ current_topic.chapter.title }}</p>
+            </div>
+            <!-- Study Timer -->
+            <div class="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-lg text-emerald-400 text-xs font-bold self-start sm:self-auto">
+                <i class="fa-regular fa-clock animate-pulse"></i>
+                <span id="study-timer">Timer: 00:00</span>
+            </div>
+        </div>
+
+        <!-- Toolbar controls -->
+        <div class="flex flex-wrap items-center gap-2 p-3 bg-slate-900 border-b border-slate-700 text-xs font-bold">
+            <button onclick="triggerAction('bookmark')" id="bookmark-btn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 hover:text-white text-slate-300 transition">
+                <i class="fa-star {% if user_note and user_note.bookmarked %}fa-solid text-amber-500{% else %}fa-regular{% endif %}"></i>
+                <span>Bookmark</span>
+            </button>
+            <button onclick="highlightTextSelection()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 hover:text-white text-slate-300 transition">
+                <i class="fa-solid fa-highlighter text-yellow-400"></i>
+                <span>Highlight Text</span>
+            </button>
+            <button onclick="downloadNotesText()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 hover:text-white text-slate-300 transition">
+                <i class="fa-solid fa-download"></i>
+                <span>Download Notes</span>
+            </button>
+            <button onclick="triggerAction('complete')" id="complete-btn" class="ml-auto flex items-center space-x-1.5 px-4 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition">
+                <i class="fa-solid {% if user_note and user_note.is_completed %}fa-circle-check{% else %}fa-circle{% endif %}"></i>
+                <span>{% if user_note and user_note.is_completed %}Completed ✓{% else %}Mark Completed{% endif %}</span>
+            </button>
+        </div>
+
+        <!-- Notes text body -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 prose prose-invert max-w-none text-slate-300 leading-relaxed text-sm md:text-base space-y-4" id="notes-content">
+            {{ notes_html | replace('\n', '<br>') | safe }}
+        </div>
+
+        <!-- Autosave Personal Notes section -->
+        <div class="p-4 bg-slate-900 border-t border-slate-700">
+            <h4 class="text-xs font-bold text-slate-200 mb-2 flex items-center space-x-1.5">
+                <i class="fa-regular fa-pen-to-square text-brand-500"></i>
+                <span>My Personal Study Notes (Autosaved)</span>
+            </h4>
+            <textarea id="personal-notes" placeholder="Write reminders, formulas or key points..." oninput="debounceSaveNotes()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs md:text-sm text-slate-200 focus:outline-none focus:border-brand-500 h-20 resize-none">{{ user_note.personal_notes or '' }}</textarea>
+        </div>
+        {% else %}
+        <!-- Placeholder -->
+        <div class="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
+            <div class="w-16 h-16 rounded-full bg-slate-700/50 text-slate-400 flex items-center justify-center text-3xl">
+                <i class="fa-regular fa-folder-open"></i>
+            </div>
+            <h3 class="font-bold text-white">No Lesson Selected</h3>
+            <p class="text-xs md:text-sm text-slate-400 max-w-xs">Select a course from the navigator menu on the left to start reading notes.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+    function toggleAccordion(id) {
+        const el = document.getElementById(id);
+        el.classList.toggle('hidden');
+    }
+
+    {% if current_topic %}
+    // Timer functionality
+    let elapsedSeconds = 0;
+    const timerInterval = setInterval(() => {
+        elapsedSeconds++;
+        const mins = Math.floor(elapsedSeconds / 60);
+        const secs = elapsedSeconds % 60;
+        document.getElementById('study-timer').innerText = `Timer: ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }, 1000);
+
+    // Save timer on exit
+    window.addEventListener('beforeunload', () => {
+        if (elapsedSeconds > 5) {
+            const formData = new FormData();
+            formData.append('action', 'timer');
+            formData.append('seconds', elapsedSeconds);
+            navigator.sendBeacon('/api/topic/{{ current_topic.id }}/action', formData);
+        }
+    });
+
+    // Save timer when clicking to other tabs/topics
+    document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            if (elapsedSeconds > 5) {
+                const formData = new FormData();
+                formData.append('action', 'timer');
+                formData.append('seconds', elapsedSeconds);
+                fetch('/api/topic/{{ current_topic.id }}/action', { method: 'POST', body: formData });
+            }
+        });
+    });
+
+    // Actions API (bookmark, complete)
+    async function triggerAction(actionName) {
+        const formData = new FormData();
+        formData.append('action', actionName);
+        
+        const res = await fetch('/api/topic/{{ current_topic.id }}/action', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        
+        if (actionName === 'bookmark') {
+            const star = document.querySelector('#bookmark-btn i');
+            if (data.bookmarked) {
+                star.classList.add('fa-solid', 'text-amber-500');
+                star.classList.remove('fa-regular');
+            } else {
+                star.classList.add('fa-regular');
+                star.classList.remove('fa-solid', 'text-amber-500');
+            }
+        } else if (actionName === 'complete') {
+            const btn = document.querySelector('#complete-btn');
+            btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>Completed ✓</span>`;
+            if (data.xp_awarded) {
+                alert(`Well Done! Topic completed! +${data.xp_awarded} XP awarded.`);
+            }
+        }
+    }
+
+    // Debounce personal notes save
+    let saveTimeout;
+    function debounceSaveNotes() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(async () => {
+            const text = document.getElementById('personal-notes').value;
+            const formData = new FormData();
+            formData.append('action', 'save_notes');
+            formData.append('personal_notes', text);
+            
+            await fetch('/api/topic/{{ current_topic.id }}/action', {
+                method: 'POST',
+                body: formData
+            });
+        }, 1500);
+    }
+
+    // Highlight text selection helper
+    async function highlightTextSelection() {
+        const selection = window.getSelection().toString().trim();
+        if (!selection) {
+            alert("Highlighting instructions: Select/highlight a sentence of text inside the lesson body first, then click 'Highlight Text'!");
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('action', 'highlight');
+        formData.append('selected_text', selection);
+        
+        await fetch('/api/topic/{{ current_topic.id }}/action', {
+            method: 'POST',
+            body: formData
+        });
+        
+        // Reload to apply style
+        location.reload();
+    }
+
+    // Download notes locally
+    function downloadNotesText() {
+        const bodyText = document.getElementById('notes-content').innerText;
+        const personalText = document.getElementById('personal-notes').value;
+        const fullContent = `=== STUDYFLOW NOTES: {{ current_topic.title | upper }} ===\n\n${bodyText}\n\n=== Personal Study Notes ===\n${personalText}`;
+        
+        const element = document.createElement('a');
+        const file = new Blob([fullContent], {type: 'text/plain'});
+        element.href = URL.createObjectURL(file);
+        element.download = "{{ current_topic.title }}.txt";
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+    }
+    {% endif %}
+</script>
+{% endblock %}

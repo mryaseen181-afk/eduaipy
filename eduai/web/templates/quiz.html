@@ -1,0 +1,424 @@
+{% extends "base.html" %}
+
+{% block title %}Practice Arena — StudyFlow{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Active Panel Wrapper -->
+    <div id="quiz-container">
+
+        <!-- VIEW 1: Generator Setup Form -->
+        <div id="gen-view" class="space-y-6">
+            <div class="space-y-1">
+                <h1 class="text-xl sm:text-2xl font-extrabold text-white">🎯 StudyFlow Practice Arena</h1>
+                <p class="text-sm text-slate-400">Generate custom study quizzes or load Timed Exams with instant grading feedback.</p>
+            </div>
+            
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4">
+                <h3 class="font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-sliders text-brand-500"></i>
+                    <span>Configure Quiz Parameters</span>
+                </h3>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400 font-bold">Subject Category</label>
+                        <select id="subject-select" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500">
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Physics">Physics</option>
+                            <option value="Chemistry">Chemistry</option>
+                            <option value="Biology">Biology</option>
+                        </select>
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400 font-bold">Chapter / Topic</label>
+                        <input type="text" id="chapter-input" placeholder="e.g. Newton's First Law, Quadratic Formulas" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500">
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400 font-bold">Difficulty</label>
+                        <select id="difficulty-select" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500">
+                            <option value="Easy">Easy</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400 font-bold">Number of Questions</label>
+                        <input type="number" id="num-input" value="5" min="2" max="20" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="startQuizSession(false)" class="flex-1 py-3 bg-brand-600 hover:bg-brand-700 rounded-xl text-sm font-bold text-white transition flex items-center justify-center space-x-2 shadow-sm">
+                    <i class="fa-solid fa-puzzle-piece"></i>
+                    <span>Generate AI Practice Quiz</span>
+                </button>
+                <button onclick="startQuizSession(true)" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 rounded-xl text-sm font-bold text-white transition flex items-center justify-center space-x-2 shadow-sm">
+                    <i class="fa-regular fa-clock animate-pulse"></i>
+                    <span>Start Timed Exam Mode ⏱️</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- VIEW 2: Active Test Panel -->
+        <div id="test-view" class="space-y-6 hidden">
+            <!-- Header -->
+            <div class="flex justify-between items-center bg-slate-850 px-4 py-3 border border-slate-700 rounded-xl">
+                <h3 id="test-title" class="font-bold text-white text-sm">Active Practice Session</h3>
+                <span id="exam-timer" class="text-rose-400 font-bold text-sm hidden flex items-center space-x-1">
+                    <i class="fa-regular fa-clock animate-pulse"></i>
+                    <span id="timer-text">00:00</span>
+                </span>
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4">
+                <h4 id="question-text" class="text-sm md:text-base font-bold text-white">Question prompt goes here...</h4>
+                
+                <!-- Options (MCQs/TF) -->
+                <div id="options-container" class="space-y-2 text-xs md:text-sm"></div>
+                
+                <!-- Fill in blank input -->
+                <input type="text" id="fill-blank-input" placeholder="Type your answer here..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-xs md:text-sm text-slate-200 focus:outline-none focus:border-brand-500 hidden">
+            </div>
+
+            <!-- Controls row -->
+            <div class="flex items-center justify-between text-xs font-bold gap-2">
+                <button onclick="loadPrevQuestion()" class="px-4 py-2 border border-slate-700 hover:bg-slate-800 hover:text-white rounded-lg transition">Previous</button>
+                <button onclick="toggleReviewFlag()" id="review-btn" class="px-4 py-2 border border-slate-700 hover:bg-slate-800 hover:text-white rounded-lg transition">Mark for Review</button>
+                <button onclick="loadNextQuestion()" class="px-4 py-2 border border-slate-700 hover:bg-slate-800 hover:text-white rounded-lg transition">Next</button>
+            </div>
+
+            <!-- Question indices layout -->
+            <div id="index-container" class="flex flex-wrap items-center gap-1.5 justify-center py-2 bg-slate-900 border border-slate-850 rounded-xl"></div>
+
+            <!-- Submit button -->
+            <button onclick="submitQuiz()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition shadow-sm">Submit Exam Paper</button>
+        </div>
+
+        <!-- VIEW 3: Score & Scorecard Report -->
+        <div id="report-view" class="space-y-6 hidden">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 text-center space-y-4 shadow-sm">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-3xl">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div class="space-y-1">
+                    <h2 class="text-lg md:text-xl font-extrabold text-white">Quiz Evaluation Completed!</h2>
+                    <p id="score-result" class="text-emerald-400 font-bold text-base md:text-lg">Score: 0/0 (0%)</p>
+                </div>
+            </div>
+
+            <!-- Detailed scorecard lists -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm">
+                <h3 class="font-bold text-white">Questions & Solutions Review</h3>
+                <div id="feedback-list" class="space-y-3.5 text-xs md:text-sm"></div>
+            </div>
+
+            <button onclick="backToArena()" class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-sm transition">Back to Practice Arena</button>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    // State management variables
+    let questions = [];
+    let currentIdx = 0;
+    let userAnswers = {}; // index -> answer_str
+    let markedForReview = new Set();
+    let isExamMode = false;
+    let timerSeconds = 0;
+    let timerInterval = null;
+
+    // Start Quiz
+    async function startQuizSession(exam) {
+        const subject = document.getElementById('subject-select').value;
+        const chapter = document.getElementById('chapter-input').value.trim() || 'General Mechanics';
+        const difficulty = document.getElementById('difficulty-select').value;
+        const numQ = document.getElementById('num-input').value;
+        
+        // Loader message
+        document.getElementById('quiz-container').innerHTML = '<div class="flex flex-col items-center justify-center py-20"><i class="fa-solid fa-spinner animate-spin text-4xl text-brand-500"></i><p class="text-xs text-slate-400 mt-3 font-semibold">Crafting custom AI practice quiz questions...</p></div>';
+        
+        try {
+            const res = await fetch('/api/quiz/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subject: subject,
+                    chapter: chapter,
+                    difficulty: difficulty,
+                    num_questions: parseInt(numQ)
+                })
+            });
+            const data = await res.json();
+            questions = data.questions;
+        } catch (e) {
+            alert('Failed to generate quiz. Check internet connection or GEMINI_API_KEY configuration.');
+            location.reload();
+            return;
+        }
+
+        // Restore active UI container HTML
+        location.reload(); // Wait, reloading wipes memory. Let's instead write a quick UI swap.
+    }
+
+    // Let's implement full active swap in JS for seamless mobile SPA actions
+    function startQuizSession(exam) {
+        const subject = document.getElementById('subject-select').value;
+        const chapter = document.getElementById('chapter-input').value.trim() || 'General Mechanics';
+        const difficulty = document.getElementById('difficulty-select').value;
+        const numQ = document.getElementById('num-input').value;
+        
+        const loader = document.createElement('div');
+        loader.className = "flex flex-col items-center justify-center py-20";
+        loader.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-4xl text-brand-500"></i><p class="text-xs text-slate-400 mt-3 font-semibold">Crafting custom AI practice quiz questions...</p>';
+        
+        const container = document.getElementById('quiz-container');
+        const genView = document.getElementById('gen-view');
+        genView.classList.add('hidden');
+        container.appendChild(loader);
+
+        fetch('/api/quiz/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                subject: subject,
+                chapter: chapter,
+                difficulty: difficulty,
+                num_questions: parseInt(numQ)
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            loader.remove();
+            questions = data.questions;
+            userAnswers = {};
+            markedForReview.clear();
+            currentIdx = 0;
+            isExamMode = exam;
+
+            document.getElementById('test-title').innerText = `AI Quiz: ${chapter} (${difficulty})`;
+
+            if (isExamMode) {
+                timerSeconds = questions.length * 1.5 * 60; // 1.5 min per question
+                updateTimerText();
+                document.getElementById('exam-timer').classList.remove('hidden');
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    timerSeconds--;
+                    if (timerSeconds <= 0) {
+                        clearInterval(timerInterval);
+                        alert("Time's up! Submitting paper automatically.");
+                        submitQuiz();
+                    } else {
+                        updateTimerText();
+                    }
+                }, 1000);
+            } else {
+                document.getElementById('exam-timer').classList.add('hidden');
+            }
+
+            document.getElementById('test-view').classList.remove('hidden');
+            setupIndexNavigator();
+            loadQuestion(0);
+        })
+        .catch(e => {
+            alert('Failed to generate quiz.');
+            location.reload();
+        });
+    }
+
+    function updateTimerText() {
+        const mins = Math.floor(timerSeconds / 60);
+        const secs = timerSeconds % 60;
+        document.getElementById('timer-text').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function setupIndexNavigator() {
+        const container = document.getElementById('index-container');
+        container.innerHTML = '';
+        questions.forEach((_, idx) => {
+            const btn = document.createElement('button');
+            btn.className = "w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition border border-slate-700 bg-slate-800 text-slate-300";
+            btn.innerText = idx + 1;
+            btn.id = `index-btn-${idx}`;
+            btn.onclick = () => loadQuestion(idx);
+            container.appendChild(btn);
+        });
+    }
+
+    function loadQuestion(index) {
+        // Save current question inputs first
+        saveActiveInput();
+
+        currentIdx = index;
+        const q = questions[index];
+
+        // Update active navigator button highlight styling
+        questions.forEach((_, idx) => {
+            const btn = document.getElementById(`index-btn-${idx}`);
+            if (!btn) return;
+            
+            btn.className = "w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition border border-slate-700";
+            if (idx === index) {
+                btn.classList.add('bg-brand-600', 'text-white', 'border-brand-500');
+            } else if (markedForReview.has(idx)) {
+                btn.classList.add('bg-rose-600', 'text-white', 'border-rose-500');
+            } else if (userAnswers[idx] !== undefined && userAnswers[idx] !== '') {
+                btn.classList.add('bg-slate-700', 'text-slate-200');
+            } else {
+                btn.classList.add('bg-slate-800', 'text-slate-400');
+            }
+        });
+
+        // Question text
+        document.getElementById('question-text').innerHTML = `<span class="text-brand-400 font-bold">Q${index + 1}:</span> ${q.question_text}`;
+
+        const optContainer = document.getElementById('options-container');
+        const fillInput = document.getElementById('fill-blank-input');
+        
+        optContainer.innerHTML = '';
+        fillInput.classList.add('hidden');
+        optContainer.classList.add('hidden');
+
+        if (q.question_type === 'mcq' || q.question_type === 'tf') {
+            optContainer.classList.remove('hidden');
+            q.options.forEach(opt => {
+                const label = document.createElement('label');
+                label.className = "flex items-center space-x-3 p-3 bg-slate-900 border border-slate-800 rounded-xl cursor-pointer hover:border-brand-500/50 hover:bg-slate-850 transition";
+                
+                const rb = document.createElement('input');
+                rb.type = 'radio';
+                rb.name = `opt-choice-${index}`;
+                rb.value = opt;
+                rb.className = "w-4 h-4 text-brand-600 bg-slate-950 border-slate-800 focus:ring-brand-500";
+                
+                if (userAnswers[index] === opt) {
+                    rb.checked = true;
+                }
+                
+                label.appendChild(rb);
+                
+                const textSpan = document.createElement('span');
+                textSpan.innerText = opt;
+                label.appendChild(textSpan);
+                
+                optContainer.appendChild(label);
+            });
+        } else {
+            // Fill in blank
+            fillInput.classList.remove('hidden');
+            fillInput.value = userAnswers[index] || '';
+        }
+
+        // Toggle review label
+        document.getElementById('review-btn').innerText = markedForReview.has(index) ? "Remove Review Flag" : "Mark for Review";
+    }
+
+    function saveActiveInput() {
+        if (questions.length === 0 || currentIdx >= questions.length) return;
+        const q = questions[currentIdx];
+        if (q.question_type === 'mcq' || q.question_type === 'tf') {
+            const checked = document.querySelector(`input[name="opt-choice-${currentIdx}"]:checked`);
+            if (checked) {
+                userAnswers[currentIdx] = checked.value;
+            }
+        } else {
+            const text = document.getElementById('fill-blank-input').value.trim();
+            if (text) {
+                userAnswers[currentIdx] = text;
+            }
+        }
+    }
+
+    function loadPrevQuestion() {
+        if (currentIdx > 0) loadQuestion(currentIdx - 1);
+    }
+
+    function loadNextQuestion() {
+        if (currentIdx < questions.length - 1) loadQuestion(currentIdx + 1);
+    }
+
+    function toggleReviewFlag() {
+        if (markedForReview.has(currentIdx)) {
+            markedForReview.delete(currentIdx);
+        } else {
+            markedForReview.add(currentIdx);
+        }
+        loadQuestion(currentIdx);
+    }
+
+    async function submitQuiz() {
+        clearInterval(timerInterval);
+        saveActiveInput();
+
+        // Loading
+        const container = document.getElementById('quiz-container');
+        const testView = document.getElementById('test-view');
+        testView.classList.add('hidden');
+
+        const loader = document.createElement('div');
+        loader.className = "flex flex-col items-center justify-center py-20";
+        loader.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-4xl text-emerald-500"></i><p class="text-xs text-slate-400 mt-3 font-semibold">Evaluating paper and scoring results...</p>';
+        container.appendChild(loader);
+
+        try {
+            const chapterInputVal = document.getElementById('chapter-input').value.trim() || 'General Mechanics';
+            const difficultySelectVal = document.getElementById('difficulty-select').value;
+            
+            const res = await fetch('/api/quiz/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    answers: userAnswers,
+                    questions: questions,
+                    title: `AI Practice: ${chapterInputVal}`,
+                    difficulty: difficultySelectVal
+                })
+            });
+            const scorecard = await res.json();
+            loader.remove();
+
+            // Display scorecard
+            document.getElementById('score-result').innerText = `Score: ${scorecard.score}/${scorecard.total} (${Math.round((scorecard.score / scorecard.total) * 100)}%) — Reward: +${scorecard.xp_reward} XP! 🎉`;
+            
+            const feedbackContainer = document.getElementById('feedback-list');
+            feedbackContainer.innerHTML = '';
+            
+            scorecard.results.forEach((r, idx) => {
+                const item = document.createElement('div');
+                item.className = `p-4 border rounded-xl space-y-2 ${r.is_correct ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-rose-500/5 border-rose-500/10'}`;
+                
+                item.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="font-bold text-white">Q${idx + 1}: ${r.question}</span>
+                        <span class="text-xs shrink-0">${r.is_correct ? '✅ Correct' : '❌ Incorrect'}</span>
+                    </div>
+                    <div class="text-xs text-slate-450 flex flex-col sm:flex-row gap-1 sm:gap-4">
+                        <span><strong>Your Answer:</strong> ${r.user_answer}</span>
+                        <span><strong>Correct Answer:</strong> ${r.correct_answer}</span>
+                    </div>
+                    <p class="text-xs text-slate-400 border-t border-slate-700/50 pt-2"><strong>Correction Detail:</strong> ${r.explanation}</p>
+                `;
+                feedbackContainer.appendChild(item);
+            });
+
+            document.getElementById('report-view').classList.remove('hidden');
+        } catch (e) {
+            alert('Failed to submit quiz.');
+            location.reload();
+        }
+    }
+
+    function backToArena() {
+        location.reload();
+    }
+</script>
+{% endblock %}

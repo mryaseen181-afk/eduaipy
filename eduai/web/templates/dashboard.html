@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — StudyFlow{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+    <!-- Top Profile & Streak card -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm">
+        <div class="space-y-1">
+            <h1 class="text-xl sm:text-2xl font-extrabold text-white">Welcome back, {{ user.username }}! 👋</h1>
+            <p class="text-sm text-slate-400">Keep up the daily momentum to hit your learning goals.</p>
+        </div>
+        <div class="inline-flex items-center space-x-2 bg-amber-500/10 border border-amber-500/25 px-4 py-2 rounded-xl text-amber-500 font-bold self-start sm:self-auto shadow-sm">
+            <i class="fa-solid fa-fire text-xl animate-pulse"></i>
+            <span>Daily Streak: {{ user.streak_count }} Days</span>
+        </div>
+    </div>
+
+    <!-- Levels and XP progress bar -->
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-3">
+        <div class="flex justify-between items-center text-sm">
+            <span class="font-bold text-brand-400">Scholar Level {{ user.level }}</span>
+            <span class="text-slate-400 font-semibold">{{ user.xp }} total XP</span>
+        </div>
+        <div class="w-full bg-slate-950 rounded-full h-3 border border-slate-800 overflow-hidden">
+            <div class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: {{ level_progress }}%"></div>
+        </div>
+        <p class="text-xs text-slate-400">You need {{ 100 - level_progress }} more XP to level up!</p>
+    </div>
+
+    <!-- Grid Container -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Left Pane: Study recommendations & announcements -->
+        <div class="space-y-6">
+            
+            <!-- Recommendations -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4">
+                <h3 class="font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-brand-500"></i>
+                    <span>EduAI Smart Recommendations</span>
+                </h3>
+                <div class="space-y-2">
+                    {% for rec in recs %}
+                    <div class="flex items-start space-x-2.5 p-3 bg-slate-900 border border-slate-800 rounded-xl text-sm">
+                        <i class="fa-solid fa-circle-chevron-right text-brand-500 mt-0.5"></i>
+                        <span>{{ rec }}</span>
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-slate-400">No suggestions yet. Browse the syllabus to start!</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Achievements & Badges -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4">
+                <h3 class="font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-trophy text-amber-500"></i>
+                    <span>Milestone Badges</span>
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {% for badge in badges %}
+                    <div class="flex items-center space-x-3 p-3 bg-slate-900 border border-slate-800 rounded-xl">
+                        <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 text-lg">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-bold text-slate-200 truncate">{{ badge.badge_name }}</h4>
+                            <p class="text-[10px] text-slate-400 truncate">{{ badge.description }}</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-slate-400 col-span-2">No achievements unlocked yet. Get correct answers in quizzes to unlock badges!</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Inbox Messages -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4">
+                <h3 class="font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-envelope text-brand-500"></i>
+                    <span>Inbox Notifications</span>
+                </h3>
+                <div class="space-y-2">
+                    {% for n in notifs %}
+                    <div class="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-200">{{ n.title }}</span>
+                            <span class="text-[10px] text-slate-500">{{ n.created_at.strftime('%H:%M') }}</span>
+                        </div>
+                        <p class="text-xs text-slate-400">{{ n.message }}</p>
+                    </div>
+                    {% else %}
+                    <div class="flex items-center space-x-2.5 p-3 bg-slate-900 border border-slate-800 rounded-xl text-sm">
+                        <i class="fa-solid fa-bullhorn text-brand-500"></i>
+                        <span>Welcome to StudyFlow! Go to 'My Courses' to select a lesson topic.</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Right Pane: Analytics Charts -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-6">
+            <h3 class="font-bold text-white flex items-center space-x-2">
+                <i class="fa-solid fa-chart-pie text-brand-500"></i>
+                <span>Progress Analytics</span>
+            </h3>
+
+            <!-- Study time Chart -->
+            <div class="space-y-2">
+                <h4 class="text-xs font-bold text-slate-400">Study Duration by Topic (Minutes)</h4>
+                <div class="h-48 relative flex items-center justify-center bg-slate-900 border border-slate-850 rounded-xl p-3">
+                    <canvas id="studyTimeChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Quiz Performance Chart -->
+            <div class="space-y-2">
+                <h4 class="text-xs font-bold text-slate-400">Recent Quiz Performance (%)</h4>
+                <div class="h-48 relative flex items-center justify-center bg-slate-900 border border-slate-850 rounded-xl p-3">
+                    <canvas id="quizPerfChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Chart Script -->
+<script>
+    const studyRaw = JSON.parse('{{ study_data | safe }}');
+    const quizRaw = JSON.parse('{{ quiz_data | safe }}');
+
+    let studyChart, quizChart;
+
+    function renderCharts(isDark) {
+        const textCl = isDark ? '#94a3b8' : '#475569';
+        const gridCl = isDark ? '#334155' : '#cbd5e1';
+        
+        // Destruct previous canvases
+        if (studyChart) studyChart.destroy();
+        if (quizChart) quizChart.destroy();
+
+        // 1. Study time bar chart
+        const studyCtx = document.getElementById('studyTimeChart').getContext('2d');
+        const studyKeys = Object.keys(studyRaw);
+        const studyVals = Object.values(studyRaw);
+
+        if (studyKeys.length === 0) {
+            studyCtx.font = "14px 'Segoe UI'";
+            studyCtx.fillStyle = textCl;
+            studyCtx.textAlign = "center";
+            studyCtx.fillText("No study time logged yet.", 150, 100);
+        } else {
+            studyChart = new Chart(studyCtx, {
+                type: 'bar',
+                data: {
+                    labels: studyKeys,
+                    datasets: [{
+                        label: 'Minutes',
+                        data: studyVals,
+                        backgroundColor: '#6366f1',
+                        borderRadius: 6,
+                        barThickness: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: gridCl }, ticks: { color: textCl } },
+                        y: { grid: { color: gridCl }, ticks: { color: textCl } }
+                    }
+                }
+            });
+        }
+
+        // 2. Quiz Performance line chart
+        const quizCtx = document.getElementById('quizPerfChart').getContext('2d');
+        if (quizRaw.length === 0) {
+            quizCtx.font = "14px 'Segoe UI'";
+            quizCtx.fillStyle = textCl;
+            quizCtx.textAlign = "center";
+            quizCtx.fillText("No quizzes taken yet.", 150, 100);
+        } else {
+            const labels = quizRaw.map((_, i) => `Quiz ${i+1}`);
+            quizChart = new Chart(quizCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: quizRaw,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: gridCl }, ticks: { color: textCl } },
+                        y: { grid: { color: gridCl }, ticks: { color: textCl }, min: 0, max: 100 }
+                    }
+                }
+            });
+        }
+    }
+
+    // Call chart rendering on start
+    window.addEventListener('DOMContentLoaded', () => {
+        const isDark = document.documentElement.classList.contains('dark');
+        renderCharts(isDark);
+    });
+
+    // Theme change listener callback
+    function updateChartsTheme() {
+        const isDark = document.documentElement.classList.contains('dark');
+        renderCharts(isDark);
+    }
+</script>
+{% endblock %}
