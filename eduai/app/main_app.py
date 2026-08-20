@@ -70,7 +70,7 @@ class MainApp:
         if self.user["role"] == "student":
             nav_destinations.append(ft.NavigationDestination(icon=ft.icons.DASHBOARD_ROUNDED, label="Home"))
         else:
-            nav_destinations.append(ft.NavigationDestination(icon=ft.icons.CHALKBBOARD_ROUNDED, label="Teacher Panel"))
+            nav_destinations.append(ft.NavigationDestination(icon=ft.icons.CHALKBOARD_ROUNDED, label="Teacher Panel"))
             
         nav_destinations.extend([
             ft.NavigationDestination(icon=ft.icons.MENU_BOOK_ROUNDED, label="Courses"),
