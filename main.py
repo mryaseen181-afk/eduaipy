@@ -1,18 +1,15 @@
-import uvicorn
 from eduai.database.connection import init_db
+from eduai.app.main_app import start_flet_app
 
 def main():
     # 1. Initialize SQLite Database schemas and seed initial data
     init_db()
     
-    # 2. Run Uvicorn server for the FastAPI mobile-responsive Web App
+    # 2. Start the Flet application
     print("\n-----------------------------------------------------------")
-    print("StudyFlow EduAI server starting locally...")
-    print("To open the mobile-friendly web app:")
-    print("--> Open your browser and go to: http://127.0.0.1:8000")
+    print("StudyFlow EduAI Flet Mobile/Desktop application starting...")
     print("-----------------------------------------------------------\n")
-    
-    uvicorn.run("eduai.web.main:app", host="127.0.0.1", port=8000, reload=False)
+    start_flet_app()
 
 if __name__ == "__main__":
     main()
